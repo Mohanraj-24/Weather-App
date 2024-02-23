@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
-
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:weather_app/additional_info.dart';
 import 'package:weather_app/hourly_forecast.dart';
@@ -15,6 +15,8 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
+  double temp = 0;
+  bool isLoading = false;
   @override
   void initState(){
     super.initState();
@@ -22,15 +24,21 @@ class _WeatherScreenState extends State<WeatherScreen> {
   }
   Future getCurrentWeather() async {
     try{
-      String cityName='London';
+      setState(() {
+        isLoading = true;
+      });
+      String cityName="London";
     final res = await http.get(
-      Uri.parse("https://api.openweathermap.org/data/2.5/forecast?q=$cityName,uk&APPID=$openWeatherApiKey"),
+        Uri.parse('https://api.openweathermap.org/data/2.5/forecast?q=$cityName,uk&APPID=$openWeatherApiKey'),
       );
       final data = jsonDecode(res.body);
       if(data['cod']!='200'){
         throw "An error occurred";
       }
-    print(data['list'][0]['main']['temp']);
+      setState(() {
+        temp = data['list'][0]['main']['temp'];
+        isLoading = false;
+      });
     }catch(e){
       e.toString();
     }
@@ -55,7 +63,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 )),
           ],
         ),
-        body: Padding(
+        body: isLoading 
+        ? const RefreshProgressIndicator() :
+        Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,22 +80,22 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     borderRadius: BorderRadius.circular(16),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: const Padding(
-                        padding: EdgeInsets.all(16.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
                             Text(
-                              '100 ° F',
-                              style: TextStyle(
+                              '$temp K',
+                              style: const TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Icon(
+                            const Icon(
                               Icons.cloud,
                               size: 64,
                             ),
-                            Text(
+                            const Text(
                               'Rain',
                               style: TextStyle(
                                 fontSize: 20,
